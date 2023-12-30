@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-14 16:47-0300\n"
+"POT-Creation-Date: 2023-12-01 18:53+0100\n"
 "PO-Revision-Date: 2023-10-31 19:18+0100\n"
 "Last-Translator: Jose Luis Tirado <joseluis.tirado@gmail.com>\n"
 "Language-Team: spanish\n"
@@ -18,38 +18,42 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.3.2\n"
 
-#: extension.js:146
+#: extension.js:149
 msgid "disable exit node"
 msgstr "desactivar nodo de salida"
 
-#: extension.js:146
+#: extension.js:149
 msgid "use as exit node"
 msgstr "usar como nodo de salida"
 
-#: extension.js:154
+#: extension.js:157
 msgid "IP address has been copied to the clipboard"
 msgstr "La dirección IP se ha copiado al portapapeles"
 
-#: extension.js:167
+#: extension.js:177
 msgid "Settings"
 msgstr "Configuración"
 
-#: extension.js:169
+#: extension.js:179
 msgid "Accept routes"
 msgstr "Aceptar rutas"
 
-#: extension.js:174
+#: extension.js:184
 msgid "Accept DNS"
 msgstr "Aceptar DNS"
 
-#: extension.js:179
+#: extension.js:189
 msgid "Allow LAN access"
 msgstr "Permitir acceso LAN"
 
-#: extension.js:184
+#: extension.js:194
 msgid "Shields up"
 msgstr "Levantar escudos"
 
-#: extension.js:189
+#: extension.js:199
 msgid "SSH"
 msgstr "SSH"
+
+#: extension.js:222
+msgid "Send Files"
+msgstr "Enviar archivos"

@@ -22,6 +22,8 @@ import GObject from "gi://GObject";
 import Gio from "gi://Gio";
 import St from "gi://St";
 
+import Gtk from "gi://Gtk";
+
 import { Extension, gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
@@ -145,13 +147,7 @@ const TailscaleMenuToggle = GObject.registerClass(
         const mullvad = new PopupMenu.PopupSubMenuMenuItem("Mullvad", false, {});
         for (const node of obj.nodes) {
           const menu = (node.mullvad && !node.exit_node) ? mullvad.menu : nodes;
-          const device_icon = !node.online
-            ? "network-offline-symbolic"
-            : ((node.os == "android" || node.os == "iOS")
-              ? "phone-symbolic"
-              : (node.mullvad
-                ? "network-vpn-symbolic"
-                : "computer-symbolic"));
+          const device_icon = this._getNodeIcon(node);
           const subtitle = node.exit_node ? _("disable exit node") : (node.exit_node_option ? _("use as exit node") : "");
           const onClick = node.exit_node_option ? () => { tailscale.exit_node = node.exit_node ? "" : node.id; } : null;
           const onLongClick = () => {
@@ -208,8 +204,151 @@ const TailscaleMenuToggle = GObject.registerClass(
       prefs.menu.addMenuItem(ssh);
 
       this.menu.addMenuItem(prefs);
+
+      // Send File      
+      this.menu.addMenuItem(this._buildSendFilesMenuItem(icon, tailscale));
     }
+
+    _getNodeIcon(node) {
+      return !node.online
+        ? "network-offline-symbolic"
+        : node.os == "android" || node.os == "iOS"
+        ? "phone-symbolic"
+        : node.mullvad
+        ? "network-vpn-symbolic"
+        : "computer-symbolic";
+    }
+
+    _buildSendFilesMenuItem(icon, tailscale) {
+      const sendFiles = new PopupMenu.PopupSubMenuMenuItem(
+          _("Send Files"),
+          false,
+          {}
+      );
+
+      // On-line nodes only
+      const nodes = new PopupMenu.PopupMenuSection();
+      const update_online_nodes = (obj) => {
+        nodes.removeAll();
+        const mullvad = new PopupMenu.PopupSubMenuMenuItem(
+          "Mullvad",
+          false,
+          {}
+        );
+        for (const node of obj.nodes) {
+          if (!node.online) continue;
+
+          const menu =
+            node.mullvad && !node.exit_node ? mullvad.menu : nodes;
+          const device_icon = this._getNodeIcon(node);
+          const onClick = () => {
+            this._sendFiles_New(node);
+            return true;
+          };
+
+          menu.addMenuItem(
+            new TailscaleDeviceItem(
+              device_icon,
+              node.name,
+              "",
+              onClick,
+              null
+            )
+          );
+        }
+        if (mullvad.menu.isEmpty()) {
+          mullvad.destroy();
+        } else {
+          nodes.addMenuItem(mullvad);
+        }
+      };
+
+      tailscale.connect("notify::nodes", (obj) => update_online_nodes(obj));
+      update_online_nodes(tailscale);
+      
+      sendFiles.menu.addMenuItem(nodes);
+      return sendFiles;
+    }
+
+    _sendFiles(dest)
+    {      
+      let fileChooser = new Gtk.FileChooserNative({
+        title: _("Send Files"),
+        transient_for: Gtk.Window(null),
+        action: Gtk.FileChooserAction.OPEN,        
+        accept_label: _("_Send"),
+        cancel_label: _("_Cancel")
+      });
+      
+      let response = fileChooser.run();
+      if (response === Gtk.ResponseType.ACCEPT) {
+        let selectedFile = fileChooser.get_filename();
+        Main.osdWindowManager.show(-1, null, selectedFile);
+      }
+      else {
+        Main.osdWindowManager.show(-1, null, "Cancelled!");
+      }
+      
+      
+      native.destroy();
+    }
+
+    _sendFiles_New(dest)
+    {
+      let mainActor = this.mainActor;
+      const native = new Gtk.FileDialogChooserNative({
+        title: "Send Files",
+        transient_for: mainActor.get_clutter_actor().get_stage().get_window(),
+        action: Gtk.FileChooserAction.OPEN,
+        accept_label: "_Open",
+        cancel_label: "_Cancel"
+      });
+      
+      native.connect("response", (self, response_id) => {
+        if (response_id === Gtk.ResponseType.ACCEPT) {
+          open_file(native.get_file());
+        }
+      });
+      
+      native.show();
+    }
+
+    _sendFilesOld(dest) {
+      try {
+        const proc = Gio.Subprocess.new(
+          ["zenity", "--file-selection", "--multiple"],
+          Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+        );
+
+        proc.communicate_utf8_async(null, null, (proc, res) => {
+          try {
+              let [, stdout, stderr] = proc.communicate_utf8_finish(res);
+              if (proc.get_successful()) {
+                  if (stdout != '') {
+                    const files = stdout.trim().split("|")                      
+                    this.tailscaleSendFiles(files, dest)
+                  }
+              } else {
+                // Hacer algo
+                logError(e, "Error")
+              }
+          } catch (e) {
+            // Hacer algo
+            logError(e, "Error")
+          }
+        });
+      } catch (e) {
+        // Hacer algo
+        logError(e, "Error")
+      }
+    }
+
+    tailscaleSendFiles(files, dest)
+    {
+      Main.osdWindowManager.show(-1, null, files.join(', '));
+    }  
   }
+
 );
 
 export default class TailscaleExtension extends Extension {
