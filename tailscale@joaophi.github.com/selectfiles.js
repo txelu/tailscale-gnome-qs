@@ -1,54 +1,38 @@
 #!/usr/bin/env gjs
 
+const Gettext = imports.gettext;
+
 imports.gi.versions.Gtk = "3.0";
 const { Gtk } = imports.gi;
-const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
 
-
-Gtk.init(null);
-
-function show_message(parent_window, message_title, message_text) {
-  const dialog = new Gtk.MessageDialog({
-    title: message_title,
-    text: message_text,
-    buttons: [Gtk.ButtonsType.CLOSE],
-//    parent: parent_window,
-    transient_for: parent_window
-  });
-
-  dialog.connect("response", (self, response_id) => {
-    dialog.destroy();
-
-    print(message_text);
-
-    Gtk.main_quit();
-  });
-
-  dialog.show();
-}
+const _ = Gettext.gettext;
 
 function select_files(parent_window) {
-  const filechooser = new Gtk.FileChooserNative({
-    title: "Open File",
-    transient_for: parent_window,
-    action: Gtk.FileChooserAction.OPEN,
-    accept_label: "_Open",
-    cancel_label: "_Cancel"
+  const filechooser = new Gtk.FileChooserDialog({
+    title: _("Send Files"),
+    parent: parent_window,
+    action: Gtk.FileChooserAction.OPEN
   });
+  filechooser.add_button(_("_Send"), Gtk.ResponseType.ACCEPT);
+  filechooser.add_button(_("_Cancel"), Gtk.ResponseType.CANCEL);
   filechooser.set_select_multiple(true);
 
   filechooser.connect("response", (self, response_id) => {
     if (response_id === Gtk.ResponseType.ACCEPT) {
-      show_message(parent_window, 'Ficheros seleccionados', filechooser.get_filenames().join("\n"));
+      print(filechooser.get_filenames().join("\n"));
     }
     filechooser.destroy();
+    Gtk.main_quit();
   });
 
   filechooser.show();
 }
 
-let win = new Gtk.Window();
-select_files(null);
+Gettext.bindtextdomain("tailscale@joaophi.github.com", "/home/txelu/code/github/tailscale-gnome-qs/tailscale@joaophi.github.com/locale");
+Gettext.textdomain("tailscale@joaophi.github.com");
+
+Gtk.init(null);
+
+select_files(new Gtk.Window());
 
 Gtk.main();
